@@ -163,7 +163,7 @@ class CISCO(FW):
         else:
             return self.RoutingHandler
             
-    def Get_ACL_Name(self,NameIf):
+    def Get_ACL_Name(self,NameIf=''):
         if not self.ConfigHandler:
             self.ConfigHandler =  CiscoConfigFW(self.DeviceName)
         self.ConfigHandler.ObjName = NameIf
@@ -264,12 +264,18 @@ class CISCO(FW):
         return   self.ConfigHandler.Service_Object_Group()
 
 
-    def Get_ACLs(self,srcnet=None,dstnet=None,protocol=None,srcport=None,dstport=None,aclname=None,action=None,Type=None):
+    def Get_ACLs(self,srcnet=None,dstnet=None,protocol=None,srcport=None,dstport=None,aclname=None,action=None,Type=None,Active='None'):
         
         if not self.ConfigHandler:
             self.ConfigHandler =  CiscoConfigFW(self.DeviceName)
         ACLs =  self.ConfigHandler.ACLs()
 
+        if Active != 'None':
+            if type(Active) == bool:
+                for acl in list(ACLs):
+                    if acl.InActive == Active:
+                        ACLs.remove(acl)                
+            
 
         if Type:
             for acl in list(ACLs):
@@ -523,61 +529,4 @@ class CISCO(FW):
             
             
 
-'''        
-FW_Dict = { 'FWSM-VAS':'10.204.0.36',
-            'F-TAG4-FW1':'10.222.100.1',
-            'FWSM_USERS':'172.31.1.1',
-            'SERVERS':'172.31.1.70',
-            #'NC_FWSM':'10.203.0.195',
-            'Outside':'10.199.2.3',
-            'CRM':'10.198.3.1',
-            'Maadi':'10.194.254.2',
-            #'FW-SV-BACKEND':'172.31.3.229'
-            }
-
-
-fw=CISCO('SERVERS',DeviceType='FWSM',DeviceSoftVersion=8.6)
-fw.Config_Handler().Initiate_Config()
-for acl in fw.Get_ACLs(Type = 'extended',srcnet='10.196.1.158',aclname='W_Apps_In'):
-    print acl.config
-    pass
-
-service = []
-p = ICMP(ICMPType='2')
-src = CiscoPort('gt','0','tcp')
-dst = CiscoPort('range','80-90','tcp')
-c = TCPUDP('tcp',src,dst)
-service = [src,dst]
-print fw.Create_ACL(Type='extended',lineno='1',aclname='U_MGMNT_P_access_in',protocol='tcp',srcnet=IPNetwork('1.1.1.1/32'),dstnet=IPNetwork('1.1.1.1/32')
-                    ,srcport='',dstport=dst,timerange='10-mar-2016',action='permit').config
-
-
-for route in  fw.Get_Interface():
-    print route.DestNetwork,route
-
-print fw.Get_ACL_Name('W_BO_APP').ACL
-#print fw.Get_Network_IP('Video_Conference_Tag_4').IP
-print fw.Get_Network_Objects_By_Name('10.195.2.76-80').Network
-print fw.Get_Service_Object()
-#print fw.Get_Service_Object_Group()
-
-for x in fw.Get_Service_Object_Group_By_Name('CRM_NBA_ports1').Service:
-    print x.Name
-
-
-
-for fwName in FW_Dict:
-    fw=CISCO(fwName,FW_Dict[fwName])
-
-
-    fw.Get_Device_Info()
-    print 'device type',fw.DeviceType 
-    print 'software version',fw.DeviceSoftVersion
-    fw.Update_Device_Data()
-
-    fw.Config_Handler().Initiate_Config()
-    for acl in fw.Get_ACLs(Type = 'standard'):
-        print acl.config
-        pass
-'''
 
